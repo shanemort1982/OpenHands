@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-05T09:42:01.845330Z",
+  "agent_class": "CodeActAgent",
+  "resolved_system_prompt_filename": "system_prompt_long_horizon.j2",
+  "enable_mcp": true,
+  "model": "claude-sonnet-4-20250514",
+  "api_base": null,
+  "headers_redacted": {},
+  "temperature": 0.0,
+  "extra_body_keys": [
+    "metadata"
+  ],
+  "tool_calling_mode_detected": "native",
+  "notes": []
+}
