@@ -289,7 +289,7 @@ class ActionExecutionClient(Runtime):
             def _sanitize(v):
                 if isinstance(v, str):
                     if (
-                        'Authorization' in v
+                        'authorization' in v.lower()
                         or 'api_key' in v.lower()
                         or 'token' in v.lower()
                     ):
@@ -311,8 +311,14 @@ class ActionExecutionClient(Runtime):
                         else s
                     )
                     # Best-effort general redactions
-                    for key in ['Authorization', 'authorization']:
-                        s = s.replace(key, 'Authorization')
+                    for marker in [
+                        'Authorization',
+                        'authorization',
+                        'api_key',
+                        'token',
+                        'Bearer ',
+                    ]:
+                        s = s.replace(marker, '<redacted>')
                     # Return parsed back to dict
                     return _json.loads(s)
                 except Exception:
@@ -326,7 +332,8 @@ class ActionExecutionClient(Runtime):
                 'action': _redact_in_obj(action_dict),
                 'observation': _redact_in_obj(obs_dict),
             }
-            out_dir = '/workspace/artifacts'
+            # Write to the requested OUTPUT directory
+            out_dir = '/workspace/OpenHands/OUTPUT'
             try:
                 _os.makedirs(out_dir, exist_ok=True)
             except Exception:
@@ -334,14 +341,6 @@ class ActionExecutionClient(Runtime):
             out_path = f'{out_dir}/tool_calls.ndjson'
             with open(out_path, 'a', encoding='utf-8') as f:
                 f.write(_json.dumps(payload) + '\n')
-            # Also mirror into output folder per request
-            out_dir2 = '/workspace/OpenHands/output'
-            try:
-                _os.makedirs(out_dir2, exist_ok=True)
-                with open(f'{out_dir2}/tool_calls.ndjson', 'a', encoding='utf-8') as f2:
-                    f2.write(_json.dumps(payload) + '\n')
-            except Exception:
-                pass
         except Exception:
             # Do not break runtime on logging failure
             pass
