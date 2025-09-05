@@ -1,0 +1,12 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "evaluated_at": "2025-09-05T10:37:25.158013Z",
+  "features": {
+    "supports_function_calling": true,
+    "supports_prompt_cache": true,
+    "supports_reasoning_effort": false,
+    "supports_stop_words": true,
+    "supports_vision": true
+  },
+  "tool_calling_mode": "native"
+}

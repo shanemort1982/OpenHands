@@ -1,0 +1,1 @@
+Token counters are not exposed in this simulated step. In OpenHands, token usage is available from the LLM completion response (ModelResponse["usage"]) processed in openhands/llm/llm.py::_post_completion, and aggregated in LLM.metrics. When running an actual agent step (CodeActAgent.step), you would read prompt_tokens and completion_tokens from ModelResponse.
