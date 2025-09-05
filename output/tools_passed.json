@@ -1,52 +1,237 @@
 {
   "builtin_tools": [
     {
-      "name": "<unknown>",
+      "name": "execute_bash",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string"
+            },
+            "is_input": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "timeout": {
+              "type": "number"
+            },
+            "security_risk": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            }
+          },
+          "required": [
+            "command",
+            "security_risk"
+          ]
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "think",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "thought": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "thought"
+          ]
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "finish",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "required": [
+            "message"
+          ],
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          }
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "browser",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "security_risk": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            }
+          },
+          "required": [
+            "code",
+            "security_risk"
+          ]
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "execute_ipython_cell",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "security_risk": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            }
+          },
+          "required": [
+            "code",
+            "security_risk"
+          ]
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "task_tracker",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "enum": [
+                "view",
+                "plan"
+              ]
+            },
+            "task_list": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique task identifier"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Brief task description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Current task status",
+                    "enum": [
+                      "todo",
+                      "in_progress",
+                      "done"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Optional additional context or details"
+                  }
+                },
+                "required": [
+                  "title",
+                  "status",
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "command"
+          ],
+          "additionalProperties": false
+        }
       }
     },
     {
-      "name": "<unknown>",
+      "name": "str_replace_editor",
       "schema": {
         "type": "function",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "enum": [
+                "view",
+                "create",
+                "str_replace",
+                "insert",
+                "undo_edit"
+              ],
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "file_text": {
+              "type": "string"
+            },
+            "old_str": {
+              "type": "string"
+            },
+            "new_str": {
+              "type": "string"
+            },
+            "insert_line": {
+              "type": "integer"
+            },
+            "view_range": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "security_risk": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            }
+          },
+          "required": [
+            "command",
+            "path",
+            "security_risk"
+          ]
+        }
       }
     }
   ],
