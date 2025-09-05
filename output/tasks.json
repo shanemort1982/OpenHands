@@ -1,1 +1,33 @@
-[]
+[
+  {
+    "id": "t1",
+    "title": "Explore repository to locate CodeActAgent and action/observation logging points",
+    "status": "done"
+  },
+  {
+    "id": "t2",
+    "title": "Design approach to hook into tool call events and write OUTPUT/tool_calls.ndjson",
+    "status": "done"
+  },
+  {
+    "id": "t3",
+    "title": "Implement minimal changes to append NDJSON entries with sanitized args and timestamps",
+    "status": "done"
+  },
+  {
+    "id": "t4",
+    "title": "Run pre-commit hooks and unit tests relevant to backend",
+    "status": "done"
+  },
+  {
+    "id": "t5",
+    "title": "Verify by executing a typical step to produce NDJSON",
+    "status": "done"
+  },
+  {
+    "id": "u1",
+    "title": "Hello Task",
+    "status": "todo",
+    "description": "Sample ticket for MVP"
+  }
+]

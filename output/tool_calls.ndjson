@@ -1,0 +1,2 @@
+{"tool": "execute_bash", "args_sanitized": {"command": "echo hello"}, "start_ts": 1757080669.183875, "end_ts": 1757080687.3089569, "duration_ms": 18125, "tokens_before": "unknown", "tokens_after": "unknown", "ok": true}
+{"tool": "execute_bash", "args_sanitized": {"command": "echo hello"}, "start_ts": 1757081540.4720194, "end_ts": 1757081605.0022883, "duration_ms": 64530, "tokens_before": "unknown", "tokens_after": "unknown", "ok": true}
