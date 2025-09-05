@@ -1,0 +1,10 @@
+{
+  "servers": [
+    {
+      "type": "shttp",
+      "name": null,
+      "url_or_cmd": "http://localhost:3000/mcp/mcp",
+      "tools": []
+    }
+  ]
+}
