@@ -1,8 +1,6 @@
+timestamp: 2025-09-05T14:15:12.460259+00:00
 model: claude-sonnet-4-20250514
-latency_sec: 0.011
-prompt_tokens: 0
-completion_tokens: 0
-input_cost_per_token: None
-output_cost_per_token: None
-total_cost_usd: 0.0
-error: AuthenticationError: litellm.AuthenticationError: Missing Anthropic API Key - A call is being made to anthropic but no key is set either in the environment variables or via params. Please set `ANTHROPIC_API_KEY` in your environment vars
+prompt_tokens: 8
+completion_tokens: 5
+total_cost_usd: 9.900000000000001e-05
+latency_ms: 2336
