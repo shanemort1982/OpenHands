@@ -1,6 +1,9 @@
+import json as _json
 import os
+import os as _os
 import tempfile
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -40,7 +43,10 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
-from openhands.events.serialization import event_to_dict, observation_from_dict
+from openhands.events.serialization import (
+    event_to_dict,
+    observation_from_dict,
+)
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
@@ -269,6 +275,77 @@ class ActionExecutionClient(Runtime):
         else:
             return ''
 
+    def _append_tool_call_log(
+        self,
+        tool_name: str,
+        args: dict,
+        start_ts: float,
+        end_ts: float,
+        action: Action,
+        observation: Observation,
+    ) -> None:
+        try:
+            # Sanitize args by redacting likely secrets
+            def _sanitize(v):
+                if isinstance(v, str):
+                    if (
+                        'Authorization' in v
+                        or 'api_key' in v.lower()
+                        or 'token' in v.lower()
+                    ):
+                        return '<redacted>'
+                return v
+
+            sanitized_args = {k: _sanitize(v) for k, v in (args or {}).items()}
+            # Also include action/observation pair as serialized dicts
+            action_dict = event_to_dict(action)
+            obs_dict = event_to_dict(observation)
+
+            # Redact secrets in serialized payloads
+            def _redact_in_obj(obj):
+                try:
+                    s = _json.dumps(obj)
+                    s = (
+                        s.replace(self.session_api_key or '', '<secret_hidden>')
+                        if self.session_api_key
+                        else s
+                    )
+                    # Best-effort general redactions
+                    for key in ['Authorization', 'authorization']:
+                        s = s.replace(key, 'Authorization')
+                    # Return parsed back to dict
+                    return _json.loads(s)
+                except Exception:
+                    return obj
+
+            payload = {
+                'tool_name': tool_name,
+                'args': sanitized_args,
+                'start_ts': datetime.fromtimestamp(start_ts).isoformat(),
+                'end_ts': datetime.fromtimestamp(end_ts).isoformat(),
+                'action': _redact_in_obj(action_dict),
+                'observation': _redact_in_obj(obs_dict),
+            }
+            out_dir = '/workspace/artifacts'
+            try:
+                _os.makedirs(out_dir, exist_ok=True)
+            except Exception:
+                pass
+            out_path = f'{out_dir}/tool_calls.ndjson'
+            with open(out_path, 'a', encoding='utf-8') as f:
+                f.write(_json.dumps(payload) + '\n')
+            # Also mirror into output folder per request
+            out_dir2 = '/workspace/OpenHands/output'
+            try:
+                _os.makedirs(out_dir2, exist_ok=True)
+                with open(f'{out_dir2}/tool_calls.ndjson', 'a', encoding='utf-8') as f2:
+                    f2.write(_json.dumps(payload) + '\n')
+            except Exception:
+                pass
+        except Exception:
+            # Do not break runtime on logging failure
+            pass
+
     def send_action_for_execution(self, action: Action) -> Observation:
         if (
             isinstance(action, FileEditAction)
@@ -316,6 +393,7 @@ class ActionExecutionClient(Runtime):
                 execution_action_body: dict[str, Any] = {
                     'action': event_to_dict(action),
                 }
+                start_ts = datetime.now().timestamp()
                 response = self._send_action_server_request(
                     'POST',
                     f'{self.action_execution_server_url}/execute_action',
@@ -323,12 +401,24 @@ class ActionExecutionClient(Runtime):
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
                 )
+                end_ts = datetime.now().timestamp()
                 assert response.is_closed
                 output = response.json()
                 if getattr(action, 'hidden', False):
                     output.get('extras')['hidden'] = True
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
+                # Log tool call
+                tool_name = (
+                    action.action
+                    if hasattr(action, 'action')
+                    else type(action).__name__
+                )
+                args = execution_action_body.get('action', {}).get('args', {})
+                # Append NDJSON line
+                self._append_tool_call_log(
+                    tool_name, args, start_ts, end_ts, action, obs
+                )
             except httpx.TimeoutException:
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
