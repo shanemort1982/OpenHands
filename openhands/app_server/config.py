@@ -137,6 +137,7 @@ def config_from_env() -> AppServerConfig:
     )
     from openhands.app_server.sandbox.docker_sandbox_service import (
         DockerSandboxServiceInjector,
+        VolumeMount,
     )
     from openhands.app_server.sandbox.docker_sandbox_spec_service import (
         DockerSandboxSpecServiceInjector,
@@ -175,7 +176,27 @@ def config_from_env() -> AppServerConfig:
         elif os.getenv('RUNTIME') in ('local', 'process'):
             config.sandbox = ProcessSandboxServiceInjector()
         else:
-            config.sandbox = DockerSandboxServiceInjector()
+            # Parse SANDBOX_VOLUMES environment variable to create mounts
+            mounts = []
+            sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
+            if sandbox_volumes:
+                # Support multiple volumes separated by commas
+                volume_specs = sandbox_volumes.split(',')
+                for spec in volume_specs:
+                    parts = spec.strip().split(':')
+                    if len(parts) >= 2:
+                        host_path = parts[0]
+                        container_path = parts[1]
+                        mode = parts[2] if len(parts) > 2 else 'rw'
+                        mounts.append(
+                            VolumeMount(
+                                host_path=host_path,
+                                container_path=container_path,
+                                mode=mode,
+                            )
+                        )
+
+            config.sandbox = DockerSandboxServiceInjector(mounts=mounts)
 
     if config.sandbox_spec is None:
         if os.getenv('RUNTIME') == 'remote':
