@@ -179,7 +179,9 @@ def config_from_env() -> AppServerConfig:
             # Support legacy environment variables for Docker sandbox configuration
             docker_sandbox_kwargs: dict = {}
             if os.getenv('SANDBOX_HOST_PORT'):
-                docker_sandbox_kwargs['host_port'] = int(os.environ['SANDBOX_HOST_PORT'])
+                docker_sandbox_kwargs['host_port'] = int(
+                    os.environ['SANDBOX_HOST_PORT']
+                )
             if os.getenv('SANDBOX_CONTAINER_URL_PATTERN'):
                 docker_sandbox_kwargs['container_url_pattern'] = os.environ[
                     'SANDBOX_CONTAINER_URL_PATTERN'

@@ -1035,10 +1035,9 @@ class TestDockerSandboxServiceInjectorFromEnv:
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
-            from openhands.app_server.config import config_from_env
-
             # Clear the global config to force reload
             import openhands.app_server.config as config_module
+            from openhands.app_server.config import config_from_env
 
             config_module._global_config = None
 
@@ -1056,18 +1055,15 @@ class TestDockerSandboxServiceInjectorFromEnv:
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
-            from openhands.app_server.config import config_from_env
-
             # Clear the global config to force reload
             import openhands.app_server.config as config_module
+            from openhands.app_server.config import config_from_env
 
             config_module._global_config = None
 
             config = config_from_env()
             assert config.sandbox is not None
-            assert (
-                config.sandbox.container_url_pattern == 'http://192.168.1.100:{port}'
-            )
+            assert config.sandbox.container_url_pattern == 'http://192.168.1.100:{port}'
 
     def test_config_from_env_with_both_sandbox_vars(self):
         """Test that both SANDBOX_HOST_PORT and SANDBOX_CONTAINER_URL_PATTERN work together."""
@@ -1080,16 +1076,13 @@ class TestDockerSandboxServiceInjectorFromEnv:
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
-            from openhands.app_server.config import config_from_env
-
             # Clear the global config to force reload
             import openhands.app_server.config as config_module
+            from openhands.app_server.config import config_from_env
 
             config_module._global_config = None
 
             config = config_from_env()
             assert config.sandbox is not None
             assert config.sandbox.host_port == 4000
-            assert (
-                config.sandbox.container_url_pattern == 'http://192.168.1.100:{port}'
-            )
+            assert config.sandbox.container_url_pattern == 'http://192.168.1.100:{port}'
