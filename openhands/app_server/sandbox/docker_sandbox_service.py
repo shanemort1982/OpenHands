@@ -339,8 +339,8 @@ class DockerSandboxService(SandboxService):
         for exposed_port in self.exposed_ports:
             host_port = self._find_unused_port()
             port_mappings[exposed_port.container_port] = host_port
-            # Add port as environment variable
-            env_vars[exposed_port.name] = str(host_port)
+            # Add port as environment variable (use container port, not host port)
+            env_vars[exposed_port.name] = str(exposed_port.container_port)
 
         # Prepare labels
         labels = {
