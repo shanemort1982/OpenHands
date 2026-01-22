@@ -74,11 +74,14 @@ def get_default_persistence_dir() -> Path:
 def get_default_web_url() -> str | None:
     """Get legacy web host parameter.
 
-    If present, we assume we are running under https.
+    If present, we assume we are running under https unless a protocol is already specified.
     """
     web_host = os.getenv('WEB_HOST')
     if not web_host:
         return None
+    # Check if protocol is already specified
+    if web_host.startswith('http://') or web_host.startswith('https://'):
+        return web_host
     return f'https://{web_host}'
 
 
