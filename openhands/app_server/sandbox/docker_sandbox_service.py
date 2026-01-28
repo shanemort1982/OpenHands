@@ -362,6 +362,11 @@ class DockerSandboxService(SandboxService):
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
             f'http://host.docker.internal:{self.host_port}/api/v1/webhooks'
         )
+        
+        # Pass DOCKER_HOST_ADDR to agent-server containers for remote deployments
+        # This allows WebSocket URLs to use the correct external IP instead of localhost
+        if os.environ.get('DOCKER_HOST_ADDR'):
+            env_vars['DOCKER_HOST_ADDR'] = os.environ['DOCKER_HOST_ADDR']
 
         # Set CORS origins for remote browser access when web_url is configured.
         # This allows the agent-server container to accept requests from the

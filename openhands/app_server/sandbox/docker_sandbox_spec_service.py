@@ -33,6 +33,10 @@ def get_docker_client() -> docker.DockerClient:
 
 
 def get_default_sandbox_specs():
+    import os
+    # Support v0.62-style workspace mounting where /workspace contains all projects
+    # instead of v1.0-style /workspace/project/ isolation
+    working_dir = os.environ.get('SANDBOX_WORKING_DIR', '/workspace/project')
     return [
         SandboxSpecInfo(
             id=get_agent_server_image(),
@@ -47,7 +51,7 @@ def get_default_sandbox_specs():
                 'ENV_LOG_LEVEL': '20',
                 **get_agent_server_env(),
             },
-            working_dir='/workspace/project',
+            working_dir=working_dir,
         )
     ]
 
