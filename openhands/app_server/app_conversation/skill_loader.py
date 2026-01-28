@@ -35,16 +35,22 @@ class ExposedUrlConfig(BaseModel):
 
 WORK_HOSTS_SKILL_FOOTER = """
 When starting a web server, use the corresponding ports via environment variables:
-- $WORKER_1 for the first port
-- $WORKER_2 for the second port
+- $WORKER_1 for the first port (container port)
+- $WORKER_2 for the second port (container port)
 
-**CRITICAL: You MUST enable CORS and bind to 0.0.0.0.** Without CORS headers, the App tab cannot detect your server and will show an empty state.
+**CRITICAL REQUIREMENTS:**
+1. You MUST enable CORS and bind to 0.0.0.0
+2. When TELLING THE USER how to access the application, you MUST use the $WORKER_1_URL or $WORKER_2_URL environment variables, NOT localhost or 127.0.0.1
+3. The WORKER_*_URL variables contain the externally accessible URLs with the correct host and port mapping
 
 Example (Flask):
 ```python
+import os
 from flask_cors import CORS
 CORS(app)
-app.run(host='0.0.0.0', port=int(os.environ.get('WORKER_1', 12000)))
+port = int(os.environ.get('WORKER_1', 12000))
+app.run(host='0.0.0.0', port=port)
+# After starting, tell the user to access: os.environ.get('WORKER_1_URL')
 ```"""
 
 
