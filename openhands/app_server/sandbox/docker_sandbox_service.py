@@ -11,9 +11,9 @@ import docker
 import httpx
 from docker.errors import APIError, NotFound
 from fastapi import Request
+from openhands.agent_server.utils import utc_now
 from pydantic import BaseModel, ConfigDict, Field
 
-from openhands.agent_server.utils import utc_now
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
 from openhands.app_server.sandbox.sandbox_models import (
@@ -362,7 +362,7 @@ class DockerSandboxService(SandboxService):
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
             f'http://host.docker.internal:{self.host_port}/api/v1/webhooks'
         )
-        
+
         # Pass DOCKER_HOST_ADDR to agent-server containers for remote deployments
         # This allows WebSocket URLs to use the correct external IP instead of localhost
         if os.environ.get('DOCKER_HOST_ADDR'):
