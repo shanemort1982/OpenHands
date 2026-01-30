@@ -208,7 +208,9 @@ def config_from_env() -> AppServerConfig:
             elif os.getenv('DOCKER_HOST_ADDR'):
                 # Use DOCKER_HOST_ADDR for WebSocket URLs on remote deployments
                 host_addr = os.environ['DOCKER_HOST_ADDR']
-                docker_sandbox_kwargs['container_url_pattern'] = f'http://{host_addr}:{{port}}'
+                docker_sandbox_kwargs['container_url_pattern'] = (
+                    f'http://{host_addr}:{{port}}'
+                )
             # Parse SANDBOX_VOLUMES and convert to VolumeMount objects
             # This is set by the CLI's --mount-cwd flag
             sandbox_volumes = os.getenv('SANDBOX_VOLUMES')

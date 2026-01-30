@@ -34,6 +34,7 @@ def get_docker_client() -> docker.DockerClient:
 
 def get_default_sandbox_specs():
     import os
+
     # Support v0.62-style workspace mounting where /workspace contains all projects
     # instead of v1.0-style /workspace/project/ isolation
     working_dir = os.environ.get('SANDBOX_WORKING_DIR', '/workspace/project')
