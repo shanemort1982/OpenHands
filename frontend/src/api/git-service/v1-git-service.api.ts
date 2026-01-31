@@ -43,7 +43,10 @@ class V1GitService {
     sessionApiKey: string | null | undefined,
     path: string,
   ): Promise<GitChange[]> {
-    const encodedPath = encodeURIComponent(path);
+    // Remove leading slash to avoid double slash in API path
+    // Backend expects: /api/git/changes/workspace/project (not //workspace/project)
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    const encodedPath = encodeURIComponent(cleanPath);
     const url = this.buildRuntimeUrl(
       conversationUrl,
       `/api/git/changes/${encodedPath}`,
@@ -81,7 +84,10 @@ class V1GitService {
     sessionApiKey: string | null | undefined,
     path: string,
   ): Promise<GitChangeDiff> {
-    const encodedPath = encodeURIComponent(path);
+    // Remove leading slash to avoid double slash in API path
+    // Backend expects: /api/git/diff/workspace/project/file.py (not //workspace/project/file.py)
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    const encodedPath = encodeURIComponent(cleanPath);
     const url = this.buildRuntimeUrl(
       conversationUrl,
       `/api/git/diff/${encodedPath}`,
