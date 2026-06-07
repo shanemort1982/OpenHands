@@ -1001,6 +1001,91 @@ class TestLiveStatusAppConversationService:
         )
 
     @patch(
+        'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_tools',
+        return_value=[],
+    )
+    @pytest.mark.asyncio
+    async def test_build_start_conversation_request_seeds_saved_suffix(
+        self, _mock_tools
+    ):
+        """A GUI conversation (no per-request suffix) must still receive the
+        user's saved ``agent_context.system_message_suffix``, both in-repo and
+        no-repo. Regression for the global-preferences drop (sibling of the
+        ``_configure_llm`` fix in #14451)."""
+        from openhands.sdk import AgentContext
+
+        saved_suffix = '<USER_PREFERENCES>British English.</USER_PREFERENCES>'
+        self.mock_user.agent_settings = _build_test_user_agent_settings(
+            self.mock_user
+        ).model_copy(
+            update={'agent_context': AgentContext(system_message_suffix=saved_suffix)}
+        )
+        self.mock_user_context.get_user_info.return_value = self.mock_user
+
+        self.service._setup_secrets_for_git_providers = AsyncMock(return_value={})
+        self.service._configure_llm_and_mcp = AsyncMock(
+            return_value=(LLM(model='gpt-4', api_key=SecretStr('test-key')), None)
+        )
+
+        for selected_repository in ('test/repo', None):
+            result = await self.service._build_start_conversation_request_for_user(
+                sandbox=self.mock_sandbox,
+                conversation_id=uuid4(),
+                initial_message=None,
+                system_message_suffix=None,
+                git_provider=ProviderType.GITHUB,
+                working_dir='/test/dir',
+                agent_type=AgentType.DEFAULT,
+                llm_model='gpt-4',
+                remote_workspace=None,
+                selected_repository=selected_repository,
+            )
+            suffix = result.agent.agent_context.system_message_suffix
+            assert saved_suffix in suffix, (
+                f'saved suffix missing for repo={selected_repository!r}'
+            )
+            assert '<HOST>' in suffix
+
+    @patch(
+        'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_tools',
+        return_value=[],
+    )
+    @pytest.mark.asyncio
+    async def test_build_start_conversation_request_per_request_suffix_wins(
+        self, _mock_tools
+    ):
+        """An explicit per-request suffix takes precedence over the saved one."""
+        from openhands.sdk import AgentContext
+
+        self.mock_user.agent_settings = _build_test_user_agent_settings(
+            self.mock_user
+        ).model_copy(
+            update={'agent_context': AgentContext(system_message_suffix='SAVED')}
+        )
+        self.mock_user_context.get_user_info.return_value = self.mock_user
+
+        self.service._setup_secrets_for_git_providers = AsyncMock(return_value={})
+        self.service._configure_llm_and_mcp = AsyncMock(
+            return_value=(LLM(model='gpt-4', api_key=SecretStr('test-key')), None)
+        )
+
+        result = await self.service._build_start_conversation_request_for_user(
+            sandbox=self.mock_sandbox,
+            conversation_id=uuid4(),
+            initial_message=None,
+            system_message_suffix='PER_REQUEST',
+            git_provider=ProviderType.GITHUB,
+            working_dir='/test/dir',
+            agent_type=AgentType.DEFAULT,
+            llm_model='gpt-4',
+            remote_workspace=None,
+            selected_repository=None,
+        )
+        suffix = result.agent.agent_context.system_message_suffix
+        assert 'PER_REQUEST' in suffix
+        assert 'SAVED' not in suffix
+
+    @patch(
         'openhands.app_server.app_conversation.live_status_app_conversation_service.get_registered_agent_definitions'
     )
     @patch(

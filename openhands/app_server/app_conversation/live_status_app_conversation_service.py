@@ -1592,6 +1592,16 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             else:
                 effective_suffix = PLANNING_AGENT_INSTRUCTION
 
+        # Fallback: when the per-conversation request carried no suffix
+        # (the GUI never sets one), seed from the user's saved global
+        # agent_context.system_message_suffix so always-on user
+        # preferences reach every conversation, in-repo and no-repo.
+        if not effective_suffix:
+            _saved_ctx = getattr(user.agent_settings, 'agent_context', None)
+            _saved_suffix = getattr(_saved_ctx, 'system_message_suffix', None)
+            if _saved_suffix:
+                effective_suffix = _saved_suffix
+
         # --- web host context -----------------------------------------------
         # Add WEB_HOST to agent context if available
         if self.web_url:
