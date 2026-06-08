@@ -1582,25 +1582,19 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             user, llm_model, conversation_id
         )
 
-        # --- system_message_suffix (planning-agent prefix) ------------------
-        effective_suffix = system_message_suffix
+        # --- system_message_suffix (user suffix + planning-agent prefix) ------
+        saved_agent_context = getattr(user.agent_settings, 'agent_context', None)
+        saved_system_message_suffix = getattr(
+            saved_agent_context, 'system_message_suffix', None
+        )
+        base_suffix = system_message_suffix or saved_system_message_suffix
+
+        effective_suffix = base_suffix
         if agent_type == AgentType.PLAN:
-            if system_message_suffix:
-                effective_suffix = (
-                    f'{PLANNING_AGENT_INSTRUCTION}\n\n{system_message_suffix}'
-                )
+            if base_suffix:
+                effective_suffix = f'{PLANNING_AGENT_INSTRUCTION}\n\n{base_suffix}'
             else:
                 effective_suffix = PLANNING_AGENT_INSTRUCTION
-
-        # Fallback: when the per-conversation request carried no suffix
-        # (the GUI never sets one), seed from the user's saved global
-        # agent_context.system_message_suffix so always-on user
-        # preferences reach every conversation, in-repo and no-repo.
-        if not effective_suffix:
-            _saved_ctx = getattr(user.agent_settings, 'agent_context', None)
-            _saved_suffix = getattr(_saved_ctx, 'system_message_suffix', None)
-            if _saved_suffix:
-                effective_suffix = _saved_suffix
 
         # --- web host context -----------------------------------------------
         # Add WEB_HOST to agent context if available

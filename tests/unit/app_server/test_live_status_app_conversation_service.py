@@ -24,6 +24,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     ConversationTrigger,
 )
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
+    PLANNING_AGENT_INSTRUCTION,
     LiveStatusAppConversationService,
 )
 from openhands.app_server.integrations.provider import ProviderToken, ProviderType
@@ -1045,6 +1046,49 @@ class TestLiveStatusAppConversationService:
                 f'saved suffix missing for repo={selected_repository!r}'
             )
             assert '<HOST>' in suffix
+
+    @patch(
+        'openhands.app_server.app_conversation.live_status_app_conversation_service.get_planning_tools',
+        return_value=[],
+    )
+    @pytest.mark.asyncio
+    async def test_build_start_conversation_request_plan_seeds_saved_suffix(
+        self, _mock_tools
+    ):
+        """Planning conversations keep their prompt boundary and saved suffix."""
+        from openhands.sdk import AgentContext
+
+        saved_suffix = '<USER_PREFERENCES>Prefer concise plans.</USER_PREFERENCES>'
+        self.mock_user.agent_settings = _build_test_user_agent_settings(
+            self.mock_user
+        ).model_copy(
+            update={'agent_context': AgentContext(system_message_suffix=saved_suffix)}
+        )
+        self.mock_user_context.get_user_info.return_value = self.mock_user
+
+        self.service._setup_secrets_for_git_providers = AsyncMock(return_value={})
+        self.service._configure_llm_and_mcp = AsyncMock(
+            return_value=(LLM(model='gpt-4', api_key=SecretStr('test-key')), None)
+        )
+
+        result = await self.service._build_start_conversation_request_for_user(
+            sandbox=self.mock_sandbox,
+            conversation_id=uuid4(),
+            initial_message=None,
+            system_message_suffix=None,
+            git_provider=ProviderType.GITHUB,
+            working_dir='/test/dir',
+            agent_type=AgentType.PLAN,
+            llm_model='gpt-4',
+            remote_workspace=None,
+            selected_repository=None,
+        )
+        suffix = result.agent.agent_context.system_message_suffix
+        assert PLANNING_AGENT_INSTRUCTION in suffix
+        assert saved_suffix in suffix
+        assert '<HOST>' in suffix
+        assert suffix.index(PLANNING_AGENT_INSTRUCTION) < suffix.index(saved_suffix)
+        assert suffix.index(saved_suffix) < suffix.index('<HOST>')
 
     @patch(
         'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_tools',
