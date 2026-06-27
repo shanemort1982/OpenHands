@@ -1270,3 +1270,87 @@ class TestFixTimezone:
         aware_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         result = service._fix_timezone(aware_dt)
         assert result == aware_dt
+
+
+class TestSaveGitWriteOnce:
+    """selected_repository / selected_branch / git_provider are write-once.
+
+    Conversation startup persists the repository, then a webhook update can
+    arrive carrying a not-yet-populated stub (git fields None). That update must
+    not wipe the repository from a running conversation. Regression cover for
+    the conversation metadata save race (#14476).
+    """
+
+    @pytest.mark.asyncio
+    async def test_stub_update_does_not_null_repository(
+        self,
+        service: SQLAppConversationInfoService,
+        sample_conversation_info: AppConversationInfo,
+    ):
+        """A later None-valued git update must not overwrite a stored repo."""
+        await service.save_app_conversation_info(sample_conversation_info)
+
+        stub_update = sample_conversation_info.model_copy(
+            update={
+                'selected_repository': None,
+                'selected_branch': None,
+                'git_provider': None,
+                'title': f'Conversation {sample_conversation_info.id.hex}',
+            }
+        )
+        await service.save_app_conversation_info(stub_update)
+
+        retrieved = await service.get_app_conversation_info(sample_conversation_info.id)
+        assert retrieved is not None
+        assert (
+            retrieved.selected_repository
+            == sample_conversation_info.selected_repository
+        )
+        assert retrieved.selected_branch == sample_conversation_info.selected_branch
+        assert retrieved.git_provider == sample_conversation_info.git_provider
+
+    @pytest.mark.asyncio
+    async def test_repository_survives_when_stub_persisted_first(
+        self,
+        service: SQLAppConversationInfoService,
+        sample_conversation_info: AppConversationInfo,
+    ):
+        """COALESCE is order-independent: the non-null repository still wins."""
+        stub_first = sample_conversation_info.model_copy(
+            update={
+                'selected_repository': None,
+                'selected_branch': None,
+                'git_provider': None,
+            }
+        )
+        await service.save_app_conversation_info(stub_first)
+        await service.save_app_conversation_info(sample_conversation_info)
+
+        retrieved = await service.get_app_conversation_info(sample_conversation_info.id)
+        assert retrieved is not None
+        assert (
+            retrieved.selected_repository
+            == sample_conversation_info.selected_repository
+        )
+
+    @pytest.mark.asyncio
+    async def test_repository_stays_none_without_repo(
+        self,
+        service: SQLAppConversationInfoService,
+        sample_conversation_info: AppConversationInfo,
+    ):
+        """A conversation created without a repo keeps a null repository."""
+        no_repo = sample_conversation_info.model_copy(
+            update={
+                'selected_repository': None,
+                'selected_branch': None,
+                'git_provider': None,
+            }
+        )
+        await service.save_app_conversation_info(no_repo)
+        await service.save_app_conversation_info(no_repo)
+
+        retrieved = await service.get_app_conversation_info(no_repo.id)
+        assert retrieved is not None
+        assert retrieved.selected_repository is None
+        assert retrieved.git_provider is None

@@ -32,8 +32,10 @@ from sqlalchemy import (
     String,
     func,
     select,
+    update,
 )
 from sqlalchemy.engine import CursorResult
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -383,8 +385,43 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             tags=info.tags if info.tags else None,
         )
 
-        await self.db_session.merge(stored)
-        await self.db_session.commit()
+        # selected_repository / selected_branch / git_provider are set once when
+        # the conversation is created. A startup webhook racing the create only
+        # sees a not-yet-persisted stub (git fields None); it must not overwrite
+        # the stored repository with None, or it silently disappears from a
+        # running conversation. COALESCE keeps the stored value whenever the
+        # incoming write is None, independent of which writer commits last.
+        update_values: dict = {
+            column.name: getattr(stored, column.name)
+            for column in StoredConversationMetadata.__table__.columns
+            if column.name != 'conversation_id'
+        }
+        for field in ('selected_repository', 'selected_branch', 'git_provider'):
+            update_values[field] = func.coalesce(
+                getattr(stored, field),
+                getattr(StoredConversationMetadata, field),
+            )
+        update_stmt = (
+            update(StoredConversationMetadata)
+            .where(StoredConversationMetadata.conversation_id == stored.conversation_id)
+            .values(update_values)
+        )
+
+        result = await self.db_session.execute(update_stmt)
+        if result.rowcount == 0:
+            # No row yet: insert it. A concurrent writer may win the insert
+            # race (duplicate primary key); fall back to the git-preserving
+            # update instead of surfacing the IntegrityError, which would
+            # otherwise leave a started conversation without metadata.
+            try:
+                self.db_session.add(stored)
+                await self.db_session.commit()
+            except IntegrityError:
+                await self.db_session.rollback()
+                await self.db_session.execute(update_stmt)
+                await self.db_session.commit()
+        else:
+            await self.db_session.commit()
         return info
 
     async def update_conversation_statistics(
