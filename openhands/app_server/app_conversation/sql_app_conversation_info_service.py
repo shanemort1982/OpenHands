@@ -407,7 +407,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             .values(update_values)
         )
 
-        result = await self.db_session.execute(update_stmt)
+        result = cast(CursorResult, await self.db_session.execute(update_stmt))
         if result.rowcount == 0:
             # No row yet: insert it. A concurrent writer may win the insert
             # race (duplicate primary key); fall back to the git-preserving
