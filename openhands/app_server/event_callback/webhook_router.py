@@ -411,8 +411,12 @@ async def on_conversation_update(
         # Store merged tags (includes automation context, skills, etc.)
         tags=merged_tags,
     )
+    # Git fields here are sourced from ``existing``, which is a None-filled stub when
+    # the create has not yet been persisted (the startup race). Preserve any stored
+    # repo rather than letting that stub null it; see #14476.
     await app_conversation_info_service.save_app_conversation_info(
-        app_conversation_info
+        app_conversation_info,
+        preserve_git_fields_on_null=True,
     )
 
     # Register SetTitleCallbackProcessor for new conversations created via webhook.
