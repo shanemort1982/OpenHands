@@ -351,11 +351,16 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
         return results
 
     async def save_app_conversation_info(
-        self, info: AppConversationInfo
+        self,
+        info: AppConversationInfo,
+        *,
+        preserve_git_fields_on_null: bool = False,
     ) -> AppConversationInfo:
         """Save conversation info and create/update SAAS metadata with user_id and org_id."""
         # Save the base conversation metadata
-        await super().save_app_conversation_info(info)
+        await super().save_app_conversation_info(
+            info, preserve_git_fields_on_null=preserve_git_fields_on_null
+        )
 
         # Get current user_id for SAAS metadata
         # Fall back to info.created_by_user_id for webhook callbacks (which use ADMIN context)

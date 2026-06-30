@@ -96,7 +96,10 @@ class AppConversationInfoService(ABC):
 
     @abstractmethod
     async def save_app_conversation_info(
-        self, info: AppConversationInfo
+        self,
+        info: AppConversationInfo,
+        *,
+        preserve_git_fields_on_null: bool = False,
     ) -> AppConversationInfo:
         """Store the sandboxed conversation info object given.
 
